@@ -33,7 +33,8 @@ size_t ByteStream::write(const string &data) {
 string ByteStream::peek_output(const size_t len) const {
     size_t length = len;
     string result;
-    if(length > buffer.size()) length = buffer.size();
+    if (length > buffer.size())
+        length = buffer.size();
     for (size_t i = 0; i < length; i++) {
         result.push_back(buffer.at(i));
     }
@@ -43,7 +44,8 @@ string ByteStream::peek_output(const size_t len) const {
 //! \param[in] len bytes will be removed from the output side of the buffer
 void ByteStream::pop_output(const size_t len) {
     size_t length = len;
-    if(length > buffer.size()) length = buffer.size();
+    if (length > buffer.size())
+        length = buffer.size();
     read_count += length;
     for (size_t i = 0; i < length; i++) {
         buffer.pop_front();
@@ -56,10 +58,13 @@ void ByteStream::pop_output(const size_t len) {
 std::string ByteStream::read(const size_t len) {
     size_t length = len;
     string result;
-    if(length > buffer.size()) length = buffer.size();
+    if (length > buffer.size())
+        length = buffer.size();
     read_count += length;
     for (size_t i = 0; i < length; i++) {
-        result.append(&buffer.front());
+        result.push_back(buffer.at(i));
+    }
+    for (size_t i = 0; i < length; i++) {
         buffer.pop_front();
     }
     return result;
