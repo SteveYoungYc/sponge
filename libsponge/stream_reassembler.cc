@@ -22,7 +22,7 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
         recv_eof_flag = true;
         last_byte = index + data.length(); //min(index + data.length(), _capacity + _output.bytes_read());
     }
-    if (index + data.length() < _output.bytes_written()) {
+    if (index + data.length() < _output.bytes_written()) {  //remove the data which has been wirtten
         return;
     }
     if (next_idx == index) {
@@ -35,16 +35,16 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
     } else {
         size_t len = data.length();
         if (len > _capacity - unassem_bytes - _output.buffer_size()) {
-            len = _capacity - unassem_bytes - _output.buffer_size();
+            //len = _capacity - unassem_bytes - _output.buffer_size();
         }
         buffer_overlap_flag = false;
         for (auto i = buffer.begin(); i != buffer.end();) {
             int overlap = detect_overlap(index, data.length(), i->first, i->second.length());
             if (overlap == -1) {
-                buffer_overlap_flag = true;
+                buffer_overlap_flag = true; // if data is contained, don't insert
                 break;
             } else if (overlap == 1) {
-                unassem_bytes -= i->second.length();
+                unassem_bytes -= i->second.length();  // if i is contained, erase i
                 buffer.erase(i++);
             } else {
                 ++i;
@@ -55,7 +55,7 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
             unassem_bytes += len;
         }
     }
-
+    // After some bytes are written in _output, some strings in buffer could be assembled.
     for (auto i = buffer.begin(); i != buffer.end();) {
         if (i->first <= _output.bytes_written() && i->first + i->second.length() > _output.bytes_written()) {
             int offset = next_idx - i->first;

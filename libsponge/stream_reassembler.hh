@@ -22,6 +22,8 @@ class StreamReassembler {
     ByteStream _output;  //!< The reassembled in-order byte stream
     size_t _capacity;    //!< The maximum number of bytes
 
+    //! \brief Detect if two strings are overlapped
+    //! \returns `-1` if b contains a, `1` if a contains b
     int detect_overlap(size_t a_idx, size_t a_len, size_t b_idx, size_t b_len);
 
   public:
