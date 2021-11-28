@@ -22,7 +22,6 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
         recv_eof_flag = true;
         last_byte = index + data.length(); //min(index + data.length(), _capacity + _output.bytes_read());
     }
-
     if (index + data.length() < _output.bytes_written()) {
         return;
     }
@@ -38,6 +37,7 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
         if (len > _capacity - unassem_bytes - _output.buffer_size()) {
             len = _capacity - unassem_bytes - _output.buffer_size();
         }
+        buffer_overlap_flag = false;
         for (auto i = buffer.begin(); i != buffer.end();) {
             int overlap = detect_overlap(index, data.length(), i->first, i->second.length());
             if (overlap == -1) {
@@ -87,4 +87,4 @@ int StreamReassembler::detect_overlap(size_t a_idx, size_t a_len, size_t b_idx, 
 
 size_t StreamReassembler::unassembled_bytes() const { return unassem_bytes; }
 
-bool StreamReassembler::empty() const { return unassem_bytes == 0;; }
+bool StreamReassembler::empty() const { return unassem_bytes == 0; }
