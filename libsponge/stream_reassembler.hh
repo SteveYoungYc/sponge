@@ -18,8 +18,11 @@ class StreamReassembler {
     size_t unassem_bytes = 0;
     size_t last_byte = 0;
     bool recv_eof_flag = false;
+    bool buffer_overlap_flag = false;
     ByteStream _output;  //!< The reassembled in-order byte stream
     size_t _capacity;    //!< The maximum number of bytes
+
+    int detect_overlap(size_t a_idx, size_t a_len, size_t b_idx, size_t b_len);
 
   public:
     //! \brief Construct a `StreamReassembler` that will store up to `capacity` bytes.
