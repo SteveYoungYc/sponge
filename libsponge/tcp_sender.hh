@@ -10,6 +10,7 @@
 #include <functional>
 #include <queue>
 #include <list>
+#include <map>
 
 //! \brief The "sender" part of a TCP implementation.
 
@@ -43,6 +44,12 @@ class TCPSender {
     Buffer buf{};
     bool sof = true, eof = false;
     size_t bytes_to_send = 0, bytes_flight = 0;
+    size_t time = 0;
+    int32_t rto_timer = _initial_retransmission_timeout;
+    unsigned int rto_val = _initial_retransmission_timeout;
+    unsigned int consecutive_tx_times = 0;
+
+    void start_RTO_timer();
 
   public:
     //! Initialize a TCPSender
