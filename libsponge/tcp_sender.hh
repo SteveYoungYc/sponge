@@ -39,7 +39,6 @@ class TCPSender {
     WrappingInt32 _ackno{0};
     uint16_t _window_size{1};
     std::string payload_str{};
-    TCPHeader header{};
     TCPSegment segment{};
     Buffer buf{};
     bool sof = true, eof = false;
@@ -50,6 +49,7 @@ class TCPSender {
     unsigned int consecutive_tx_times = 0;
 
     void start_RTO_timer();
+    void send_segment(const bool syn, const bool fin, WrappingInt32 seqno, size_t bytes_send);
 
   public:
     //! Initialize a TCPSender

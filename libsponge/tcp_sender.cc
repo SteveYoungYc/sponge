@@ -20,42 +20,18 @@ using namespace std;
 TCPSender::TCPSender(const size_t capacity, const uint16_t retx_timeout, const std::optional<WrappingInt32> fixed_isn)
     : _isn(fixed_isn.value_or(WrappingInt32{random_device()()}))
     , _initial_retransmission_timeout{retx_timeout}
-    , _stream(capacity) {
-    sof = true;
-    _window_size = 1;
-}
+    , _stream(capacity) {}
 
 uint64_t TCPSender::bytes_in_flight() const { return bytes_flight; }
 
 void TCPSender::fill_window() {
     if (sof) {
-        header.syn = true;
-        header.fin = false;
-        header.seqno = _isn;
-        bytes_flight++;
-        _next_seqno++;
+        send_segment(true, false, _isn, 0);
         sof = false;
-        segment.header() = header;
-        outstanding.push_back(segment);
-        _segments_out.push(segment);
-        start_RTO_timer();
-        return;
     } else if (!_stream.input_ended() && !_stream.buffer_empty() && _window_size - bytes_flight > 0) {
-        header.syn = false;
-        header.fin = false;
-        header.seqno = wrap(_stream.bytes_read() + 1, _isn);
-
         bytes_to_send = min(size_t(_window_size - bytes_flight), TCPConfig::MAX_PAYLOAD_SIZE);
         bytes_to_send = min(bytes_to_send, _stream.buffer_size());
-        payload_str = _stream.read(bytes_to_send);
-        bytes_flight += payload_str.size();
-        _next_seqno += payload_str.size();
-        segment.payload() = Buffer(std::move(payload_str));
-
-        segment.header() = header;
-        outstanding.push_back(segment);
-        _segments_out.push(segment);
-        start_RTO_timer();
+        send_segment(false, false, wrap(_stream.bytes_read() + 1, _isn), bytes_to_send);
     }
 }
 
@@ -83,38 +59,17 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
     }
     if (_stream.input_ended()) {
         if (_stream.buffer_size() + 1 <= window_size - bytes_flight) {
-            header.syn = false;
-            header.fin = true;
-            header.seqno = wrap(_stream.bytes_read() + 1, _isn);
-
             bytes_to_send = min(size_t(_window_size - bytes_flight), TCPConfig::MAX_PAYLOAD_SIZE);
             bytes_to_send = min(bytes_to_send, _stream.buffer_size());
-            payload_str = _stream.read(bytes_to_send);
-            bytes_flight += payload_str.size();
-            _next_seqno += payload_str.size();
-            segment.payload() = Buffer(std::move(payload_str));
-
-            segment.header() = header;
-            segment.header().fin = true;
-            outstanding.push_back(segment);
-            _segments_out.push(segment);
+            send_segment(false, true, wrap(_stream.bytes_read() + 1, _isn), bytes_to_send);
         } else if (_stream.buffer_size() == 0 && _window_size - bytes_flight > 0) {
-            header.fin = true;
-            header.seqno = _isn;
-            bytes_flight++;
-            _next_seqno++;
-            segment.header() = header;
-            segment.payload() = Buffer(std::move(""));
-            outstanding.push_back(segment);
-            _segments_out.push(segment);
-            start_RTO_timer();
+            send_segment(false, true, _isn, 0);
         }
     }
 }
 
 //! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method
 void TCPSender::tick(const size_t ms_since_last_tick) {
-    time += ms_since_last_tick;
     if (rto_timer - int32_t(ms_since_last_tick) > 0) {
         rto_timer -= ms_since_last_tick;
     } else {
@@ -128,6 +83,28 @@ void TCPSender::tick(const size_t ms_since_last_tick) {
 void TCPSender::start_RTO_timer() {
     // if (rto_timer <= 0)
     rto_timer = rto_val;
+}
+
+void TCPSender::send_segment(const bool syn, const bool fin, WrappingInt32 seqno, size_t bytes_send) {
+    segment.header().syn = syn;
+    segment.header().fin = fin;
+    segment.header().seqno = seqno;
+    if (bytes_send != 0) {
+        payload_str = _stream.read(bytes_to_send);
+    } else {
+        payload_str = "";
+    }
+    if (syn || fin) {
+        bytes_flight++;
+        _next_seqno++;
+    } else {
+        bytes_flight += payload_str.size();
+        _next_seqno += payload_str.size();
+    }
+    segment.payload() = Buffer(std::move(payload_str));
+    outstanding.push_back(segment);
+    _segments_out.push(segment);
+    start_RTO_timer();
 }
 
 unsigned int TCPSender::consecutive_retransmissions() const { return consecutive_tx_times; }
