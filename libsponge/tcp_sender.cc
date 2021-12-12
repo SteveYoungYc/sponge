@@ -39,10 +39,10 @@ void TCPSender::fill_window() {
             break;
         if (_stream.input_ended() && _stream.buffer_size() + 1 <= fake_window_size - bytes_flight &&
             bytes_to_send == _stream.buffer_size() && eof == false) {
-            send_segment(0, 1, wrap(_stream.bytes_read() + 1, _isn), bytes_to_send);
+            send_segment(0, 1, wrap(_stream.bytes_read() + 1, _isn), bytes_to_send);    // send the last few bytes with fin
             eof = true;
         } else {
-            send_segment(0, 0, wrap(_stream.bytes_read() + 1, _isn), bytes_to_send);
+            send_segment(0, 0, wrap(_stream.bytes_read() + 1, _isn), bytes_to_send);    // keep sending bytes until bytes_to_send is 0 or buffer is empty
         }
     }
     if (_stream.input_ended() && eof == false && _stream.buffer_size() == 0 && fake_window_size > bytes_flight) {
