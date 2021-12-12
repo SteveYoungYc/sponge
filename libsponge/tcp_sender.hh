@@ -37,11 +37,11 @@ class TCPSender {
 
     std::list<TCPSegment> outstanding{};
     WrappingInt32 _ackno{0};
-    uint16_t _window_size{1};
+    uint16_t _window_size{1}, fake_window_size{1};
     std::string payload_str{};
     TCPSegment segment{};
     Buffer buf{};
-    bool sof = true, eof = false;
+    bool sof = true, eof = false, syn_ack = false, fin_ack = false, rto_timer_start = false;
     size_t bytes_to_send = 0, bytes_flight = 0;
     size_t time = 0;
     int32_t rto_timer = _initial_retransmission_timeout;
