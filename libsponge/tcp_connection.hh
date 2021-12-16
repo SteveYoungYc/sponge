@@ -26,6 +26,7 @@ class TCPConnection {
 
     void send_segment(const bool rst, const bool ack, const bool syn, const bool fin, uint16_t win, WrappingInt32 ackno);
     void send_segment(const bool rst, const bool ack, const bool syn, const bool fin, uint16_t win, WrappingInt32 seqno, WrappingInt32 ackno);
+    void send_sender_segments();
 
   public:
     //! \name "Input" interface for the writer

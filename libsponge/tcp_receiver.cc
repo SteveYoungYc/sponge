@@ -23,11 +23,12 @@ void TCPReceiver::segment_received(const TCPSegment &seg) {
         // sof = false;
     }
     if (sof) {
-        if (seg.payload().size() != 0 && seg.header().syn) {
-            absolute_seq_num = 1;
-        }
-        else {
-            absolute_seq_num = unwrap(seg.header().seqno, isn, chkpoint);
+        if (seg.length_in_sequence_space() > 0) {
+            if (seg.payload().size() != 0 && seg.header().syn) {
+                absolute_seq_num = 1;
+            } else {
+                absolute_seq_num = unwrap(seg.header().seqno, isn, chkpoint);
+            }
         }
         stream_idx = absolute_seq_num - 1;
         chkpoint = absolute_seq_num;
@@ -35,7 +36,7 @@ void TCPReceiver::segment_received(const TCPSegment &seg) {
             if (seg.payload().size() != 0) {
                 if (_reassembler.stream_out().bytes_written() + fin_redundent_bytes == stream_idx) {
                     fin_redundent_bytes++;
-                } else {    // deal with fin with data but unassenmbled
+                } else {  // deal with fin with data but unassenmbled
                     fin_unass_flag = true;
                 }
             } else {
