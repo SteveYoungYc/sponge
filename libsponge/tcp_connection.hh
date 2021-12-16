@@ -16,10 +16,16 @@ class TCPConnection {
     //! outbound queue of segments that the TCPConnection wants sent
     std::queue<TCPSegment> _segments_out{};
 
+    TCPSegment segment{};
+    bool reset = false, sender_start = false;
+
     //! Should the TCPConnection stay active (and keep ACKing)
     //! for 10 * _cfg.rt_timeout milliseconds after both streams have ended,
     //! in case the remote TCPConnection doesn't know we've received its whole stream?
     bool _linger_after_streams_finish{true};
+
+    void send_segment(const bool rst, const bool ack, const bool syn, const bool fin, uint16_t win, WrappingInt32 ackno);
+    void send_segment(const bool rst, const bool ack, const bool syn, const bool fin, uint16_t win, WrappingInt32 seqno, WrappingInt32 ackno);
 
   public:
     //! \name "Input" interface for the writer
